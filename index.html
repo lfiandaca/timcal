@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TimCal">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<script src="https://accounts.google.com/gsi/client" async onload="onGisLoad()"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <style>
   :root{
@@ -58,6 +59,9 @@
   .btn{border:1px solid var(--line-strong);background:#fff;padding:8px 13px;border-radius:10px;cursor:pointer;font-size:13.5px;color:var(--ink);font-weight:500}
   .btn:hover{background:var(--hover)}
   .btn.ghost{border-color:transparent;color:var(--ink-soft)}
+  .sync-status{align-self:center;font-size:12px;color:var(--ink-soft);white-space:nowrap}
+  .sync-status.ok{color:#2f8f80}
+  .sync-status.err{color:#b5484a}
 
   .summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:16px}
   .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow);position:relative;overflow:hidden}
@@ -208,6 +212,8 @@
       <button id="nextY" aria-label="Anno successivo">&rsaquo;</button>
     </div>
     <div class="actions">
+      <button class="btn" id="driveBtn">Connetti Drive</button>
+      <span id="syncStatus" class="sync-status"></span>
       <button class="btn" id="exportBtn">Esporta backup</button>
       <button class="btn" id="importBtn">Importa</button>
       <button class="btn" id="resetBtn">Svuota…</button>
@@ -376,18 +382,18 @@ function normalizeDays(days){
   return days;
 }
 function migrate(obj){
-  if (obj && obj.days) { obj.config=obj.config||{}; obj.config.pxAnnual=obj.config.pxAnnual||{}; obj.config.bonusAnnual=obj.config.bonusAnnual||{}; obj.config.ferieAnnual=obj.config.ferieAnnual||{}; obj.config.fsmoAnnual=obj.config.fsmoAnnual||{}; obj.days=normalizeDays(obj.days||{}); return obj; }
+  if (obj && obj.days) { obj.config=obj.config||{}; obj.config.pxAnnual=obj.config.pxAnnual||{}; obj.config.bonusAnnual=obj.config.bonusAnnual||{}; obj.config.ferieAnnual=obj.config.ferieAnnual||{}; obj.config.fsmoAnnual=obj.config.fsmoAnnual||{}; obj.days=normalizeDays(obj.days||{}); obj.updatedAt=obj.updatedAt||0; return obj; }
   // old format: flat map of date->record
-  return {days:normalizeDays(obj||{}),config:{pxAnnual:{},bonusAnnual:{},ferieAnnual:{},fsmoAnnual:{}}};
+  return {days:normalizeDays(obj||{}),config:{pxAnnual:{},bonusAnnual:{},ferieAnnual:{},fsmoAnnual:{}},updatedAt:0};
 }
 async function load(){
   const raw=await store.get(STORE_KEY);
-  if (raw){ try{ state=migrate(JSON.parse(raw)); }catch(e){ state={days:{},config:{pxAnnual:{},bonusAnnual:{},ferieAnnual:{},fsmoAnnual:{}}}; } }
-  else { state={days:JSON.parse(JSON.stringify(SEED)),config:{pxAnnual:{},bonusAnnual:{"2026":4},ferieAnnual:{},fsmoAnnual:{"2026":2}}}; await save(); }
+  if (raw){ try{ state=migrate(JSON.parse(raw)); }catch(e){ state={days:{},config:{pxAnnual:{},bonusAnnual:{},ferieAnnual:{},fsmoAnnual:{}},updatedAt:0}; } }
+  else { state={days:JSON.parse(JSON.stringify(SEED)),config:{pxAnnual:{},bonusAnnual:{"2026":4},ferieAnnual:{},fsmoAnnual:{"2026":2}},updatedAt:0}; await save(); }
 }
 let saveT=null;
 async function save(){ await store.set(STORE_KEY,JSON.stringify(state)); }
-function queueSave(){ clearTimeout(saveT); saveT=setTimeout(save,120); }
+function queueSave(){ state.updatedAt=Date.now(); clearTimeout(saveT); saveT=setTimeout(save,120); schedulePush(); }
 
 // ---------- render ----------
 function render(){
@@ -714,7 +720,108 @@ document.getElementById("resetAll").addEventListener("click",()=>{
   queueSave(); render(); closeReset();
 });
 
-(async()=>{ await load(); render(); })();
+// ---------- Google Drive sync ----------
+const CLIENT_ID="537702276493-sa18temrru36hf710b1p537963225irt.apps.googleusercontent.com";
+const DRIVE_SCOPE="https://www.googleapis.com/auth/drive.file";
+const DRIVE_FILE="timcal-data.json";
+let tokenClient=null, accessToken=null, driveFileId=null, lastSync=0, pushT=null, gisReadyR=null;
+const gisReady=new Promise(r=>gisReadyR=r);
+function onGisLoad(){ try{ initGis(); }catch(e){} if(gisReadyR) gisReadyR(); }
+window.onGisLoad=onGisLoad;
+function initGis(){
+  if(tokenClient||!(window.google&&google.accounts&&google.accounts.oauth2)) return;
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:DRIVE_SCOPE,callback:()=>{}});
+}
+function requestToken(interactive){
+  return new Promise((resolve,reject)=>{
+    if(!tokenClient){ reject(new Error("gis-not-ready")); return; }
+    tokenClient.callback=(resp)=>{ if(resp&&resp.access_token){ accessToken=resp.access_token; resolve(accessToken); } else reject(resp||new Error("no-token")); };
+    try{ tokenClient.requestAccessToken({prompt: interactive?"consent":""}); }catch(e){ reject(e); }
+  });
+}
+function authH(extra){ return Object.assign({Authorization:"Bearer "+accessToken}, extra||{}); }
+async function driveFind(){
+  const q=encodeURIComponent("name='"+DRIVE_FILE+"' and trashed=false");
+  const r=await fetch("https://www.googleapis.com/drive/v3/files?spaces=drive&fields=files(id)&q="+q,{headers:authH()});
+  if(!r.ok) throw r; const j=await r.json(); return (j.files&&j.files[0])?j.files[0].id:null;
+}
+async function driveGet(id){
+  const r=await fetch("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",{headers:authH()});
+  if(!r.ok) throw r; return await r.json();
+}
+async function driveCreate(obj){
+  const b="timcalbnd", meta={name:DRIVE_FILE,mimeType:"application/json"};
+  const body="--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(meta)+"\r\n--"+b+"\r\nContent-Type: application/json\r\n\r\n"+JSON.stringify(obj)+"\r\n--"+b+"--";
+  const r=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",{method:"POST",headers:authH({"Content-Type":"multipart/related; boundary="+b}),body:body});
+  if(!r.ok) throw r; const j=await r.json(); return j.id;
+}
+async function driveUpdate(id,obj){
+  const r=await fetch("https://www.googleapis.com/upload/drive/v3/files/"+id+"?uploadType=media",{method:"PATCH",headers:authH({"Content-Type":"application/json"}),body:JSON.stringify(obj)});
+  if(!r.ok) throw r;
+}
+async function reauthIf(e){ const s=e&&e.status; if(s===401||s===403){ try{ await requestToken(false); return true; }catch(_){} } return false; }
+function setSync(s){
+  const el=document.getElementById("syncStatus"); if(!el) return;
+  if(s==="ok"){ const t=new Date(lastSync); el.textContent="Drive · sincronizzato "+pad(t.getHours())+":"+pad(t.getMinutes()); el.className="sync-status ok"; }
+  else if(s==="syncing"){ el.textContent="Sincronizzazione…"; el.className="sync-status"; }
+  else if(s==="offline"){ el.textContent="Offline"; el.className="sync-status"; }
+  else if(s==="error"){ el.textContent="Sync non riuscito — riprova"; el.className="sync-status err"; }
+  else { el.textContent=""; el.className="sync-status"; }
+}
+function setConnected(on){
+  const b=document.getElementById("driveBtn"); if(b) b.textContent=on?"Drive: connesso":"Connetti Drive";
+  if(!on) setSync("");
+}
+async function syncPush(){
+  if(!accessToken) return;
+  if(!navigator.onLine){ setSync("offline"); return; }
+  setSync("syncing");
+  try{
+    if(driveFileId===null) driveFileId=await driveFind();
+    if(driveFileId) await driveUpdate(driveFileId,state);
+    else driveFileId=await driveCreate(state);
+    lastSync=Date.now(); setSync("ok");
+  }catch(e){ if(await reauthIf(e)) return syncPush(); setSync("error"); }
+}
+async function syncInitial(){
+  if(!accessToken) return;
+  setSync("syncing");
+  try{
+    const id=await driveFind();
+    if(!id){ driveFileId=null; await syncPush(); return; }
+    driveFileId=id;
+    const remote=await driveGet(id);
+    const rU=(remote&&remote.updatedAt)||0, lU=state.updatedAt||0;
+    if(rU>lU){ state=migrate(remote); await save(); render(); }
+    else if(lU>rU){ await syncPush(); return; }
+    lastSync=Date.now(); setSync("ok");
+  }catch(e){ if(await reauthIf(e)) return syncInitial(); setSync("error"); }
+}
+async function connectDrive(){
+  try{ await Promise.race([gisReady,new Promise(r=>setTimeout(r,4000))]); initGis(); await requestToken(true); }
+  catch(e){ setSync("error"); return; }
+  localStorage.setItem("timcal.drive","1"); setConnected(true);
+  await syncInitial();
+}
+function disconnectDrive(){ accessToken=null; driveFileId=null; localStorage.removeItem("timcal.drive"); setConnected(false); }
+function schedulePush(){ if(!accessToken) return; clearTimeout(pushT); pushT=setTimeout(syncPush,1500); }
+(function bindDrive(){
+  const b=document.getElementById("driveBtn");
+  if(b) b.addEventListener("click",()=>{ (localStorage.getItem("timcal.drive")==="1"&&accessToken)?disconnectDrive():connectDrive(); });
+  window.addEventListener("online",()=>{ if(accessToken) syncPush(); });
+  window.addEventListener("offline",()=>{ if(accessToken) setSync("offline"); });
+})();
+
+(async()=>{
+  await load(); render();
+  await Promise.race([gisReady,new Promise(r=>setTimeout(r,4000))]);
+  initGis();
+  if(localStorage.getItem("timcal.drive")==="1"){
+    setConnected(true);
+    try{ await requestToken(false); await syncInitial(); }
+    catch(e){ setSync("error"); }
+  }
+})();
 </script>
 <script>
 if ("serviceWorker" in navigator) {
