@@ -79,6 +79,11 @@
   .fm-in:focus{outline:none;border-bottom-color:var(--accent)}
   .fm-l{font-size:11px;color:var(--ink-soft);margin-top:5px}
   .rich-list{margin-top:12px}
+  /* dates grouped by month: flat wrapping list on desktop */
+  .chiprail{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+  .chiprail .chipmonth{display:contents}
+  .chiprail .cm-lab{display:none}
+  .chiprail .cm-row{display:contents}
   .px-chip.fsmo{background:#f9e7ef;border-color:#eccedd;color:#a4517a}
   .px-chip.fsmo:hover{background:#f4dbe6}
   .px-chip.planned{border-style:dashed;opacity:.85}
@@ -249,6 +254,13 @@
     .calzone{display:contents}
     header.app{margin-bottom:8px}
     .bigmonth{overflow:hidden}
+    .chiprail{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;gap:0;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .chiprail::-webkit-scrollbar{display:none}
+    .chiprail .chipmonth{display:flex;flex-direction:column;gap:8px;flex:0 0 100%;scroll-snap-align:center;align-items:flex-start}
+    .chiprail .cm-lab{display:block;font-size:12px;color:var(--ink-soft);font-weight:600;text-transform:capitalize}
+    .chiprail .cm-row{display:flex;flex-wrap:nowrap;gap:8px;max-width:100%;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+    .chiprail .cm-row::-webkit-scrollbar{display:none}
+    .chiprail .px-chip{font-size:14px;padding:6px 14px}
   }
 </style>
 </head>
@@ -257,7 +269,7 @@
   <header class="app">
     <div class="title">
       <h1 class="brand"><img src="./icon-192.png" alt="" class="brand-ico"><span>Tim Cal</span></h1>
-      <p>Turni, ferie, permessi e giornate di solidarietà — tutto in locale, sul tuo PC.</p>
+      <p>Turni, ferie, permessi e giornate di solidarietà.</p>
     </div>
   </header>
 
@@ -474,6 +486,16 @@ function render(){
 
 function yearDays(){ return Object.entries(state.days).filter(([k])=>k.startsWith(year+"-")); }
 
+function chipRail(keys, cls){
+  if(!keys || !keys.length) return "";
+  const by={};
+  keys.slice().sort().forEach(k=>{ const m=+k.slice(5,7); (by[m]=by[m]||[]).push(k); });
+  const groups=Object.keys(by).map(Number).sort((a,b)=>a-b).map(m=>{
+    const chips=by[m].map(k=>{ const d=+k.slice(8,10); return `<span class="px-chip ${cls}" data-key="${k}">${d} ${MONTHS_ABBR[m-1]}</span>`; }).join("");
+    return `<div class="chipmonth"><div class="cm-lab">${MONTHS_IT[m-1]}</div><div class="cm-row">${chips}</div></div>`;
+  }).join("");
+  return `<div class="chiprail">${groups}</div>`;
+}
 function renderSummary(){
   let cds=0,feTaken=0,fePlanned=0,fo=0,fsmoTaken=0,fsmoPlanned=0;
   for (const [,v] of yearDays()){
@@ -495,13 +517,11 @@ function renderSummary(){
         <div><div class="fm-n">${o.m2v}</div><div class="fm-l">${o.m2l}</div></div>
         <div><div class="fm-n">${o.m3v}</div><div class="fm-l">${o.m3l}</div></div>
       </div>
-      ${o.chips?`<div class="px-list rich-list">${o.chips}</div>`:""}
+      ${o.chips||""}
     </div>`;
-  const feChips=yearDays().filter(([,v])=>v.type==="FE" && v.feStatus!=="planned")
-    .map(([k])=>k).sort()
-    .map(k=>{ const[,m,d]=k.split("-").map(Number); return `<span class="px-chip fe" data-key="${k}">${d} ${MONTHS_ABBR[m-1]}</span>`; }).join("");
+  const feDates=yearDays().filter(([,v])=>v.type==="FE" && v.feStatus!=="planned").map(([k])=>k);
   const ferieCard=richCard({cid:"cardFerie",tab:"ferie",lbl:"Ferie",v:"--c-fe-taken",fixed:true,tot:ferieTot,
-    m2v:ferieTot-(feTaken+fePlanned),m2l:"da pianificare", m3v:ferieTot-feTaken,m3l:"da prendere", chips:feChips});
+    m2v:ferieTot-(feTaken+fePlanned),m2l:"da pianificare", m3v:ferieTot-feTaken,m3l:"da prendere", chips:chipRail(feDates,"fe")});
   const foChips=yearDays().filter(([,v])=>v.fo).map(([k])=>k).sort()
     .map(k=>{ const[,m,d]=k.split("-").map(Number); return `<span class="px-chip fo" data-key="${k}">${d} ${MONTHS_ABBR[m-1]}</span>`; }).join("");
   const foCard=`
@@ -517,16 +537,15 @@ function renderSummary(){
   const fsmoChips=fsmoDays.map(t=>{ const[,m,d]=t.k.split("-").map(Number); const pl=t.st==="planned";
     return `<span class="px-chip fsmo${pl?" planned":""}" data-key="${t.k}">${d} ${MONTHS_ABBR[m-1]}${pl?" · des.":""}</span>`; }).join("");
   const fsmoCard=richCard({cid:"cardFSMO",tab:"fsmo",lbl:"Festività SMO",v:"--c-fsmo",inputId:"fsmoTot",tot:fsmoTot,
-    m2v:fsmoTot-(fsmoTaken+fsmoPlanned),m2l:"da pianificare", m3v:fsmoTaken,m3l:"usati", chips:fsmoChips});
-  const cdsChips=yearDays().filter(([,v])=>v.type==="CDS").map(([k])=>k).sort()
-    .map(k=>{ const[,m,d]=k.split("-").map(Number); return `<span class="px-chip cds" data-key="${k}">${d} ${MONTHS_ABBR[m-1]}</span>`; }).join("");
+    m2v:fsmoTot-(fsmoTaken+fsmoPlanned),m2l:"da pianificare", m3v:fsmoTaken,m3l:"usati", chips:fsmoChips?`<div class="px-list rich-list">${fsmoChips}</div>`:""});
+  const cdsDates=yearDays().filter(([,v])=>v.type==="CDS").map(([k])=>k);
   const cdsCard=`
     <div class="card wide" id="cardCDS" data-tab="cds">
       <div class="swatch" style="background:var(--c-cds)"></div>
       <div class="lbl">Solidarietà</div>
       <div class="num">${cds}</div>
       <div class="sub">giornate CDS nell'anno</div>
-      ${cdsChips?`<div class="px-list rich-list">${cdsChips}</div>`:""}
+      ${chipRail(cdsDates,"cds")}
     </div>`;
   // order: Ferie, Ferie obbligatorie, Festività SMO, Solidarietà
   document.getElementById("summary").innerHTML=ferieCard+foCard+fsmoCard+cdsCard;
