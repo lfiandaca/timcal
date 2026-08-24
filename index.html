@@ -47,6 +47,8 @@
 
   header.app{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px}
   .title h1{font-size:24px;margin:0;font-weight:650;letter-spacing:-.01em}
+  .title h1.brand{display:flex;align-items:center;gap:11px;background:none;padding:0;margin:0;font-size:24px;font-weight:650;letter-spacing:-.01em;color:#111}
+  .brand-ico{width:40px;height:40px;display:block;flex:0 0 auto}
   .title p{margin:4px 0 0;color:var(--ink-soft);font-size:13.5px}
   .year-pick{display:flex;align-items:center;gap:8px}
   .year-pick button{border:1px solid var(--line-strong);background:#fff;width:32px;height:32px;border-radius:9px;cursor:pointer;font-size:16px;color:var(--ink);line-height:1}
@@ -197,7 +199,7 @@
 <div class="wrap">
   <header class="app">
     <div class="title">
-      <h1>TimCal</h1>
+      <h1 class="brand"><img src="./icon-192.png" alt="" class="brand-ico"><span>Tim Cal</span></h1>
       <p>Turni, ferie, permessi e giornate di solidarietà — tutto in locale, sul tuo PC.</p>
     </div>
     <div class="year-pick">
