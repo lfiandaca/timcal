@@ -63,15 +63,16 @@
   .sync-status.ok{color:#2f8f80}
   .sync-status.err{color:#b5484a}
 
-  .summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;align-items:start}
   .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow);position:relative;overflow:hidden}
   .card .swatch{position:absolute;top:0;left:0;width:4px;height:100%}
   .card .lbl{font-size:12px;color:var(--ink-soft);letter-spacing:.01em;margin-bottom:6px}
   .card .num{font-family:Georgia,"Times New Roman",serif;font-size:30px;font-weight:600;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
   .card .sub{font-size:11.5px;color:var(--ink-soft);margin-top:5px}
   .card .num small{font-size:15px;color:var(--ink-soft);font-family:Georgia,serif}
-  .card.rich{grid-column:span 2}
-  .card.wide{grid-column:span 2}
+  .card.rich{grid-column:auto}
+  .card.wide{grid-column:auto}
+  #cardCDS{grid-column:1 / -1}
   .rich-metrics{display:flex;gap:22px;flex-wrap:wrap;margin-top:2px;align-items:flex-end}
   .fm-n{font-family:Georgia,"Times New Roman",serif;font-size:26px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
   .fm-in{font-family:Georgia,"Times New Roman",serif;font-size:26px;font-weight:600;line-height:1;width:2.2em;border:none;border-bottom:1.5px solid var(--line-strong);background:transparent;color:var(--ink);padding:0 0 2px;text-align:left;font-variant-numeric:tabular-nums}
@@ -99,6 +100,7 @@
   .dow.big{gap:6px;margin-bottom:6px}
   .dow.big span{font-size:12px}
   .grid.big{gap:6px}
+  @media(min-width:701px){ .dow.big,.grid.big{max-width:660px} }
   .cell.big{aspect-ratio:1/1;min-height:0;border-radius:10px;align-items:flex-start;justify-content:flex-start;padding:5px 7px;font-size:13px}
   .cell.big .dnum{font-weight:600}
   .cell.big .clabel{position:absolute;left:7px;bottom:5px;font-size:10px;color:rgba(43,47,54,.72);font-weight:500;line-height:1.1}
@@ -207,6 +209,13 @@
   .tabbar{display:none}
   .tab{flex:0 0 auto;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:20px;padding:8px 15px;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap}
   .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .tab[data-tab="cal"].active,.tab[data-tab="year"].active{background:#004591;color:#fff;border-color:#004591}
+  .tab[data-tab="ferie"].active{background:var(--c-fe-taken);color:var(--ink);border-color:#c3aee6}
+  .tab[data-tab="fo"].active{background:var(--c-fo);color:var(--ink);border-color:#e3cf86}
+  .tab[data-tab="fsmo"].active{background:var(--c-fsmo);color:var(--ink);border-color:#e5aec6}
+  .tab[data-tab="px"].active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .tab[data-tab="bonus"].active{background:var(--bonus);color:#fff;border-color:var(--bonus)}
+  .tab[data-tab="cds"].active{background:var(--c-cds);color:var(--ink);border-color:#e6c29b}
 
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   @media (max-width:520px){.wrap{padding:18px 14px 60px}.summary{grid-template-columns:repeat(2,1fr)}}
