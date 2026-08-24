@@ -83,6 +83,9 @@
   .px-chip.planned{border-style:dashed;opacity:.85}
   .px-chip.fo{background:#f7efcf;border-color:#e7dbb0;color:#8a7326}
   .px-chip.fo:hover{background:#f2e7bd}
+  .px-chip.cds{background:#f7e7d6;border-color:#ecd7c1;color:#9a6b3f}
+  .px-chip.cds:hover{background:#f2ddc8}
+  .px-chip.fo:hover{background:#f2e7bd}
 
   /* big current month */
   .bigmonth{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:26px}
@@ -195,8 +198,25 @@
   .legend .sw.foflag::after{content:"";position:absolute;top:1px;left:1px;width:5px;height:5px;border-radius:1px;background:#d9b528}
 
   .hint{font-size:12px;color:var(--ink-soft);margin-top:24px;text-align:center}
+
+  /* mobile tab bar (hidden on desktop) */
+  .tabbar{display:none}
+  .tab{flex:0 0 auto;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:20px;padding:8px 15px;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   @media (max-width:520px){.wrap{padding:18px 14px 60px}.summary{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---- mobile: tabbed interface ---- */
+  @media (max-width:700px){
+    .tabbar{display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:9px 0;margin:0 0 16px;position:sticky;top:0;z-index:20;background:var(--bg);scrollbar-width:none}
+    .tabbar::-webkit-scrollbar{display:none}
+    .summary,.permits{display:contents}
+    .card.rich,.card.wide,.card{grid-column:auto !important;margin-bottom:0}
+    .permits,.bigmonth,.months,.summary{margin-bottom:0}
+    header.app{margin-bottom:8px}
+    .cell.big{min-height:58px}
+  }
 </style>
 </head>
 <body>
@@ -221,16 +241,27 @@
     </div>
   </header>
 
+  <nav class="tabbar" id="tabbar">
+    <button class="tab" data-tab="cal">Calendario</button>
+    <button class="tab" data-tab="ferie">Ferie</button>
+    <button class="tab" data-tab="fo">Ferie obbl.</button>
+    <button class="tab" data-tab="fsmo">Fest. SMO</button>
+    <button class="tab" data-tab="px">Permessi PX</button>
+    <button class="tab" data-tab="bonus">Bonus</button>
+    <button class="tab" data-tab="cds">Solidarietà</button>
+    <button class="tab" data-tab="year">Anno</button>
+  </nav>
+
   <section class="summary" id="summary"></section>
   <section class="permits">
-    <div class="px-panel" id="pxPanel"></div>
-    <div class="px-panel" id="bonusPanel"></div>
+    <div class="px-panel" id="pxPanel" data-tab="px"></div>
+    <div class="px-panel" id="bonusPanel" data-tab="bonus"></div>
   </section>
-  <section class="bigmonth" id="bigMonth"></section>
-  <section class="months" id="months"></section>
+  <section class="bigmonth" id="bigMonth" data-tab="cal"></section>
+  <section class="months" id="months" data-tab="year"></section>
 
-  <div class="legend" id="legend"></div>
-  <p class="hint">Clicca un giorno per assegnare o modificare. I dati restano salvati automaticamente in questo browser.</p>
+  <div class="legend" id="legend" data-tab="cal year"></div>
+  <p class="hint" data-tab="cal year">Tocca un giorno per assegnare o modificare. I dati si salvano da soli.</p>
 </div>
 
 <div class="backdrop" id="backdrop">
@@ -416,7 +447,7 @@ function renderSummary(){
   const ferieTot=ferieAnnualFor(year);
   const fsmoTot=fsmoAnnualFor(year);
   const richCard=(o)=>`
-    <div class="card rich">
+    <div class="card rich" id="${o.cid}" data-tab="${o.tab}">
       <div class="swatch" style="background:var(${o.v})"></div>
       <div class="lbl">${o.lbl}</div>
       <div class="rich-metrics">
@@ -429,12 +460,12 @@ function renderSummary(){
   const feChips=yearDays().filter(([,v])=>v.type==="FE" && v.feStatus!=="planned")
     .map(([k])=>k).sort()
     .map(k=>{ const[,m,d]=k.split("-").map(Number); return `<span class="px-chip fe" data-key="${k}">${d} ${MONTHS_ABBR[m-1]}</span>`; }).join("");
-  const ferieCard=richCard({lbl:"Ferie",v:"--c-fe-taken",fixed:true,tot:ferieTot,
+  const ferieCard=richCard({cid:"cardFerie",tab:"ferie",lbl:"Ferie",v:"--c-fe-taken",fixed:true,tot:ferieTot,
     m2v:ferieTot-(feTaken+fePlanned),m2l:"da pianificare", m3v:ferieTot-feTaken,m3l:"da prendere", chips:feChips});
   const foChips=yearDays().filter(([,v])=>v.fo).map(([k])=>k).sort()
     .map(k=>{ const[,m,d]=k.split("-").map(Number); return `<span class="px-chip fo" data-key="${k}">${d} ${MONTHS_ABBR[m-1]}</span>`; }).join("");
   const foCard=`
-    <div class="card wide">
+    <div class="card wide" id="cardFO" data-tab="fo">
       <div class="swatch" style="background:var(--c-fo)"></div>
       <div class="lbl">Ferie obbligatorie</div>
       <div class="num">${fo}</div>
@@ -445,21 +476,24 @@ function renderSummary(){
     .map(([k,v])=>({k,st:v.fsmoStatus})).sort((a,b)=>a.k<b.k?-1:1);
   const fsmoChips=fsmoDays.map(t=>{ const[,m,d]=t.k.split("-").map(Number); const pl=t.st==="planned";
     return `<span class="px-chip fsmo${pl?" planned":""}" data-key="${t.k}">${d} ${MONTHS_ABBR[m-1]}${pl?" · des.":""}</span>`; }).join("");
-  const fsmoCard=richCard({lbl:"Festività SMO",v:"--c-fsmo",inputId:"fsmoTot",tot:fsmoTot,
+  const fsmoCard=richCard({cid:"cardFSMO",tab:"fsmo",lbl:"Festività SMO",v:"--c-fsmo",inputId:"fsmoTot",tot:fsmoTot,
     m2v:fsmoTot-(fsmoTaken+fsmoPlanned),m2l:"da pianificare", m3v:fsmoTaken,m3l:"usati", chips:fsmoChips});
-  const smallCard=(c)=>`
-    <div class="card">
-      <div class="swatch" style="background:var(${c.v})"></div>
-      <div class="lbl">${c.lbl}</div>
-      <div class="num">${c.num}</div>
-      ${c.sub?`<div class="sub">${c.sub}</div>`:""}
+  const cdsChips=yearDays().filter(([,v])=>v.type==="CDS").map(([k])=>k).sort()
+    .map(k=>{ const[,m,d]=k.split("-").map(Number); return `<span class="px-chip cds" data-key="${k}">${d} ${MONTHS_ABBR[m-1]}</span>`; }).join("");
+  const cdsCard=`
+    <div class="card wide" id="cardCDS" data-tab="cds">
+      <div class="swatch" style="background:var(--c-cds)"></div>
+      <div class="lbl">Solidarietà</div>
+      <div class="num">${cds}</div>
+      <div class="sub">giornate CDS nell'anno</div>
+      ${cdsChips?`<div class="px-list rich-list">${cdsChips}</div>`:""}
     </div>`;
-  const cdsCard=smallCard({lbl:"Solidarietà",num:cds,v:"--c-cds",sub:"giornate CDS"});
   // order: Ferie, Ferie obbligatorie, Festività SMO, Solidarietà
   document.getElementById("summary").innerHTML=ferieCard+foCard+fsmoCard+cdsCard;
   const si=document.getElementById("fsmoTot");
   si.addEventListener("change",()=>{ const v=parseFloat(si.value); state.config.fsmoAnnual[year]=isNaN(v)?0:v; queueSave(); renderSummary(); });
   document.getElementById("summary").querySelectorAll(".px-chip").forEach(c=>c.addEventListener("click",()=>openEditor(c.dataset.key)));
+  applyTabs();
 }
 
 function renderPanels(){
@@ -719,6 +753,38 @@ document.getElementById("resetAll").addEventListener("click",()=>{
   state={days:{},config:{pxAnnual:{},bonusAnnual:{},ferieAnnual:{},fsmoAnnual:{}}};
   queueSave(); render(); closeReset();
 });
+
+// ---------- mobile tabs ----------
+let activeTab="cal";
+const mqMobile=window.matchMedia("(max-width:700px)");
+function applyTabs(){
+  const mobile=mqMobile.matches;
+  document.querySelectorAll("[data-tab]").forEach(el=>{
+    if(el.classList.contains("tab")) return;
+    if(!mobile){ el.style.display=""; return; }
+    const tabs=(el.getAttribute("data-tab")||"").split(/\s+/);
+    el.style.display = tabs.includes(activeTab) ? "" : "none";
+  });
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===activeTab));
+}
+(function bindTabs(){
+  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+    activeTab=b.dataset.tab; applyTabs(); window.scrollTo({top:0,behavior:"smooth"});
+  }));
+  if(mqMobile.addEventListener) mqMobile.addEventListener("change",applyTabs);
+  // swipe between months on the big-month (Calendario) tab
+  const bm=document.getElementById("bigMonth");
+  if(bm){ let x0=null,y0=null;
+    bm.addEventListener("touchstart",e=>{ x0=e.touches[0].clientX; y0=e.touches[0].clientY; },{passive:true});
+    bm.addEventListener("touchend",e=>{
+      if(x0===null) return; const dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0; x0=null;
+      if(Math.abs(dx)<55 || Math.abs(dx)<Math.abs(dy)) return;   // ignore small/vertical
+      if(dx<0){ viewMonth++; if(viewMonth>11){viewMonth=0;year++;} }
+      else    { viewMonth--; if(viewMonth<0){viewMonth=11;year--;} }
+      render();
+    },{passive:true});
+  }
+})();
 
 // ---------- Google Drive sync ----------
 const CLIENT_ID="537702276493-sa18temrru36hf710b1p537963225irt.apps.googleusercontent.com";
