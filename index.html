@@ -199,6 +199,10 @@
 
   .hint{font-size:12px;color:var(--ink-soft);margin-top:24px;text-align:center}
 
+  /* command controls card */
+  .controls{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .ctl-a,.ctl-b{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
   /* mobile tab bar (hidden on desktop) */
   .tabbar{display:none}
   .tab{flex:0 0 auto;border:1px solid var(--line-strong);background:#fff;color:var(--ink);border-radius:20px;padding:8px 15px;font-size:13px;font-family:inherit;cursor:pointer;white-space:nowrap}
@@ -209,8 +213,14 @@
 
   /* ---- mobile: tabbed interface ---- */
   @media (max-width:700px){
-    .tabbar{display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:9px 0;margin:0 0 16px;position:sticky;top:0;z-index:20;background:var(--bg);scrollbar-width:none}
-    .tabbar::-webkit-scrollbar{display:none}
+    .controls{flex-direction:column;align-items:stretch;gap:10px}
+    .ctl-a{justify-content:space-between}
+    .ctl-a .year-pick{flex:0 0 auto}
+    .ctl-a #driveBtn{flex:1}
+    .ctl-a #syncStatus{flex-basis:100%}
+    .ctl-b .btn{flex:1;text-align:center}
+    .tabbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;margin:0 0 16px}
+    .tab{width:100%;text-align:center;border-radius:10px;padding:11px 6px;white-space:normal}
     .summary,.permits{display:contents}
     .card.rich,.card.wide,.card{grid-column:auto !important;margin-bottom:0}
     .permits,.bigmonth,.months,.summary{margin-bottom:0}
@@ -226,20 +236,25 @@
       <h1 class="brand"><img src="./icon-192.png" alt="" class="brand-ico"><span>Tim Cal</span></h1>
       <p>Turni, ferie, permessi e giornate di solidarietà — tutto in locale, sul tuo PC.</p>
     </div>
-    <div class="year-pick">
-      <button id="prevY" aria-label="Anno precedente">&lsaquo;</button>
-      <span class="y" id="yearLbl">2026</span>
-      <button id="nextY" aria-label="Anno successivo">&rsaquo;</button>
-    </div>
-    <div class="actions">
+  </header>
+
+  <section class="controls">
+    <div class="ctl-a">
+      <div class="year-pick">
+        <button id="prevY" aria-label="Anno precedente">&lsaquo;</button>
+        <span class="y" id="yearLbl">2026</span>
+        <button id="nextY" aria-label="Anno successivo">&rsaquo;</button>
+      </div>
       <button class="btn" id="driveBtn">Connetti Drive</button>
       <span id="syncStatus" class="sync-status"></span>
-      <button class="btn" id="exportBtn">Esporta backup</button>
+    </div>
+    <div class="ctl-b">
+      <button class="btn" id="exportBtn">Esporta</button>
       <button class="btn" id="importBtn">Importa</button>
-      <button class="btn" id="resetBtn">Svuota…</button>
+      <button class="btn" id="resetBtn">Svuota</button>
       <input type="file" id="importFile" accept="application/json" style="display:none">
     </div>
-  </header>
+  </section>
 
   <nav class="tabbar" id="tabbar">
     <button class="tab" data-tab="cal">Calendario</button>
