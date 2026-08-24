@@ -101,10 +101,12 @@
   .dow.big span{font-size:12px}
   .grid.big{gap:6px}
   @media(min-width:701px){
-    .cell.big{aspect-ratio:auto;min-height:0;height:84px}
-    .calzone{display:flex;gap:18px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:26px}
+    .cell.big{aspect-ratio:auto !important;min-height:0;height:auto}
+    .grid.big{grid-auto-rows:80px;gap:5px}
+    .dow.big{gap:5px}
+    .calzone{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 14px 16px 10px;margin-bottom:26px}
     .calzone>.bigmonth{flex:1;min-width:0;background:none;border:none;box-shadow:none;padding:0;margin:0}
-    .calzone>.months{flex:0 0 300px;background:none;border:none;box-shadow:none;padding:0 6px 0 0;margin:0;display:grid;grid-template-columns:1fr;gap:14px;max-height:600px;overflow-y:auto;overflow-x:hidden}
+    .calzone>.months{flex:0 0 288px;background:none;border:none;box-shadow:none;padding:0 6px 0 0;margin:0;display:grid;grid-template-columns:1fr;gap:14px;max-height:600px;overflow-y:auto;overflow-x:hidden}
     .calzone>.months .month{margin:0}
     .calzone>.months::-webkit-scrollbar{width:9px}
     .calzone>.months::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:6px}
