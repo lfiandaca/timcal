@@ -1,0 +1,17 @@
+{
+  "name": "TimCal",
+  "short_name": "TimCal",
+  "description": "Turni, ferie, permessi e giornate di solidarietà — locale e offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fbf8f2",
+  "theme_color": "#8073b0",
+  "lang": "it",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
