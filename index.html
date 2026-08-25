@@ -64,29 +64,35 @@
   .sync-status.ok{color:#2f8f80}
   .sync-status.err{color:#b5484a}
 
-  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;align-items:start}
+  .datagrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px;align-items:stretch}
+  .datagrid>.card,.datagrid>.px-panel{margin:0;height:100%}
   .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow);position:relative;overflow:hidden}
   .card .swatch{position:absolute;top:0;left:0;width:4px;height:100%}
   .card .lbl{font-size:12px;color:var(--ink-soft);letter-spacing:.01em;margin-bottom:6px}
   .card .num{font-family:Georgia,"Times New Roman",serif;font-size:30px;font-weight:600;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
   .card .sub{font-size:11.5px;color:var(--ink-soft);margin-top:5px}
   .card .num small{font-size:15px;color:var(--ink-soft);font-family:Georgia,serif}
-  .card.rich{grid-column:auto}
-  .card.wide{grid-column:auto}
-  #cardCDS{grid-column:1 / -1}
+  .card.rich,.card.wide{grid-column:auto}
   .rich-metrics{display:flex;gap:22px;flex-wrap:wrap;margin-top:2px;align-items:flex-end}
   .fm-n{font-family:Georgia,"Times New Roman",serif;font-size:26px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
   .fm-in{font-family:Georgia,"Times New Roman",serif;font-size:26px;font-weight:600;line-height:1;width:2.2em;border:none;border-bottom:1.5px solid var(--line-strong);background:transparent;color:var(--ink);padding:0 0 2px;text-align:left;font-variant-numeric:tabular-nums}
   .fm-in:focus{outline:none;border-bottom-color:var(--accent)}
   .fm-l{font-size:11px;color:var(--ink-soft);margin-top:5px}
   .rich-list{margin-top:12px}
-  /* dates grouped by month: flat wrapping list on desktop */
-  .chipwrap{position:relative}
-  .cv{display:none}
-  .chiprail{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
-  .chiprail .chipmonth{display:contents}
-  .chiprail .cm-lab{display:none}
-  .chiprail .cm-row{display:contents}
+  /* dates/times grouped by month: single-row swipe carousel */
+  .chipwrap{position:relative;margin-top:12px}
+  .chipwrap.multi{padding:0 20px}
+  .chiprail{display:flex;flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;gap:0;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .chiprail::-webkit-scrollbar{display:none}
+  .chiprail .chipmonth{display:flex;flex-direction:column;gap:8px;flex:0 0 100%;scroll-snap-align:start;align-items:flex-start}
+  .chiprail .cm-lab{font-size:12px;color:var(--ink-soft);font-weight:600;text-transform:capitalize}
+  .chiprail .cm-row{display:flex;flex-wrap:nowrap;gap:8px;max-width:100%}
+  .chiprail .px-chip{font-size:12px;padding:6px 9px;white-space:nowrap;flex:0 0 auto;min-width:54px;text-align:center}
+  .cv{display:none;position:absolute;top:54%;transform:translateY(-50%);width:0;height:0;border-style:solid;opacity:.55;cursor:pointer}
+  .chipwrap.multi .cv{display:block}
+  .cv:hover{opacity:.9}
+  .cv.l{left:0;border-width:7px 9px 7px 0;border-color:transparent var(--ink-soft) transparent transparent}
+  .cv.r{right:0;border-width:7px 0 7px 9px;border-color:transparent transparent transparent var(--ink-soft)}
   .px-chip.fsmo{background:#f9e7ef;border-color:#eccedd;color:#a4517a}
   .px-chip.fsmo:hover{background:#f4dbe6}
   .px-chip.planned{border-style:dashed;opacity:.85}
@@ -127,8 +133,7 @@
   @media(max-width:520px){.cell.big{font-size:12px}.cell.big .clabel{display:none}}
 
   /* PX / Bonus dedicated panels */
-  .permits{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:26px}
-  @media(max-width:640px){.permits{grid-template-columns:1fr}}
+  .permits{display:grid;grid-template-columns:2fr 1fr;gap:12px}
   .px-panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;position:relative;overflow:hidden}
   .px-panel .swatch{position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent)}
   .px-top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
@@ -239,7 +244,7 @@
   .tab[data-tab="cds"].active{background:var(--c-cds);color:var(--ink);border-color:#e6c29b}
 
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-  @media (max-width:520px){.wrap{padding:18px 14px 60px}.summary{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:520px){.wrap{padding:18px 14px 60px}}
 
   /* ---- mobile: tabbed interface ---- */
   @media (max-width:700px){
@@ -251,23 +256,13 @@
     .ctl-b .btn{flex:1;text-align:center}
     .tabbar{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;margin:0 0 16px}
     .tab{width:100%;white-space:normal}
-    .summary,.permits{display:contents}
-    .card.rich,.card.wide,.card{grid-column:auto !important;margin-bottom:0}
-    .permits,.bigmonth,.months,.summary{margin-bottom:0}
+    .datagrid{display:contents}
+    .card.rich,.card.wide,.card,.px-panel{grid-column:auto !important;margin-bottom:0}
+    .bigmonth,.months{margin-bottom:0}
     .calzone{display:contents}
     header.app{margin-bottom:8px}
     .bigmonth{overflow:hidden}
-    .chipwrap.multi{padding:0 16px}
-    .cv{display:block;position:absolute;top:52%;transform:translateY(-50%);width:0;height:0;border-style:solid;opacity:.5}
-    .cv.l{left:0;border-width:6px 8px 6px 0;border-color:transparent var(--ink-soft) transparent transparent}
-    .cv.r{right:0;border-width:6px 0 6px 8px;border-color:transparent transparent transparent var(--ink-soft)}
-    .chiprail{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;gap:0;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-    .chiprail::-webkit-scrollbar{display:none}
-    .chiprail .chipmonth{display:flex;flex-direction:column;gap:8px;flex:0 0 100%;scroll-snap-align:center;align-items:flex-start}
-    .chiprail .cm-lab{display:block;font-size:12px;color:var(--ink-soft);font-weight:600;text-transform:capitalize}
-    .chiprail .cm-row{display:flex;flex-wrap:nowrap;gap:8px;max-width:100%;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-    .chiprail .cm-row::-webkit-scrollbar{display:none}
-    .chiprail .px-chip{font-size:12px;padding:6px 8px;white-space:nowrap;flex:0 0 auto;min-width:58px;text-align:center}
+    .chiprail .chipmonth{scroll-snap-align:center}
   }
 </style>
 </head>
@@ -309,10 +304,13 @@
     <button class="tab" data-tab="year"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.3"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.3"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.3"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.3"/></svg><span>Anno</span></button>
   </nav>
 
-  <section class="summary" id="summary"></section>
-  <section class="permits">
+  <section class="datagrid">
+    <div class="card rich" id="cardFerie" data-tab="ferie"></div>
+    <div class="card wide" id="cardFO" data-tab="fo"></div>
+    <div class="card wide" id="cardCDS" data-tab="cds"></div>
     <div class="px-panel" id="pxPanel" data-tab="px"></div>
     <div class="px-panel" id="bonusPanel" data-tab="bonus"></div>
+    <div class="card rich" id="cardFSMO" data-tab="fsmo"></div>
   </section>
   <div class="calzone">
     <section class="bigmonth" id="bigMonth" data-tab="cal"></section>
@@ -493,19 +491,21 @@ function render(){
 
 function yearDays(){ return Object.entries(state.days).filter(([k])=>k.startsWith(year+"-")); }
 
-function chipRail(keys, cls){
-  if(!keys || !keys.length) return "";
+function dateItems(keys){ return keys.map(k=>({key:k,label:(+k.slice(8,10))+" "+MONTHS_ABBR[+k.slice(5,7)-1]})); }
+function chipRail(items, cls, perPage){
+  if(!items || !items.length) return "";
+  perPage = perPage||4;
   const by={};
-  keys.slice().sort().forEach(k=>{ const m=+k.slice(5,7); (by[m]=by[m]||[]).push(k); });
+  items.slice().sort((a,b)=>a.key<b.key?-1:1).forEach(it=>{ const m=+it.key.slice(5,7); (by[m]=by[m]||[]).push(it); });
   const months=Object.keys(by).map(Number).sort((a,b)=>a-b);
   const pages=[];
-  months.forEach(m=>{ const arr=by[m]; for(let i=0;i<arr.length;i+=4) pages.push({m,keys:arr.slice(i,i+4)}); });
+  months.forEach(m=>{ const arr=by[m]; for(let i=0;i<arr.length;i+=perPage) pages.push({m,items:arr.slice(i,i+perPage)}); });
   const groups=pages.map(p=>{
-    const chips=p.keys.map(k=>{ const d=+k.slice(8,10); return `<span class="px-chip ${cls}" data-key="${k}">${d} ${MONTHS_ABBR[p.m-1]}</span>`; }).join("");
+    const chips=p.items.map(it=>`<span class="px-chip ${cls}" data-key="${it.key}">${it.label}</span>`).join("");
     return `<div class="chipmonth"><div class="cm-lab">${MONTHS_IT[p.m-1]}</div><div class="cm-row">${chips}</div></div>`;
   }).join("");
   const multi=pages.length>1;
-  return `<div class="chipwrap${multi?" multi":""}">${multi?'<span class="cv l"></span>':''}<div class="chiprail">${groups}</div>${multi?'<span class="cv r"></span>':''}</div>`;
+  return `<div class="chipwrap${multi?" multi":""}">${multi?'<span class="cv l" role="button" aria-label="Precedenti"></span>':''}<div class="chiprail">${groups}</div>${multi?'<span class="cv r" role="button" aria-label="Successivi"></span>':''}</div>`;
 }
 function renderSummary(){
   let cds=0,feTaken=0,fePlanned=0,fo=0,fsmoTaken=0,fsmoPlanned=0;
@@ -517,10 +517,8 @@ function renderSummary(){
       case "FSMO": (v.fsmoStatus==="planned"?fsmoPlanned++:fsmoTaken++); break;
     }
   }
-  const ferieTot=ferieAnnualFor(year);
-  const fsmoTot=fsmoAnnualFor(year);
-  const richCard=(o)=>`
-    <div class="card rich" id="${o.cid}" data-tab="${o.tab}">
+  const ferieTot=ferieAnnualFor(year), fsmoTot=fsmoAnnualFor(year);
+  const richInner=(o)=>`
       <div class="swatch" style="background:var(${o.v})"></div>
       <div class="lbl">${o.lbl}</div>
       <div class="rich-metrics">
@@ -528,41 +526,30 @@ function renderSummary(){
         <div><div class="fm-n">${o.m2v}</div><div class="fm-l">${o.m2l}</div></div>
         <div><div class="fm-n">${o.m3v}</div><div class="fm-l">${o.m3l}</div></div>
       </div>
-      ${o.chips||""}
-    </div>`;
+      ${o.chips||""}`;
+  const countInner=(o)=>`
+      <div class="swatch" style="background:var(${o.v})"></div>
+      <div class="lbl">${o.lbl}</div>
+      <div class="num">${o.num}</div>
+      <div class="sub">${o.sub}</div>
+      ${o.chips||""}`;
+
   const feDates=yearDays().filter(([,v])=>v.type==="FE" && v.feStatus!=="planned").map(([k])=>k);
-  const ferieCard=richCard({cid:"cardFerie",tab:"ferie",lbl:"Ferie",v:"--c-fe-taken",fixed:true,tot:ferieTot,
-    m2v:ferieTot-(feTaken+fePlanned),m2l:"da pianificare", m3v:ferieTot-feTaken,m3l:"da prendere", chips:chipRail(feDates,"fe")});
-  const foChips=yearDays().filter(([,v])=>v.fo).map(([k])=>k).sort()
-    .map(k=>{ const[,m,d]=k.split("-").map(Number); return `<span class="px-chip fo" data-key="${k}">${d} ${MONTHS_ABBR[m-1]}</span>`; }).join("");
-  const foCard=`
-    <div class="card wide" id="cardFO" data-tab="fo">
-      <div class="swatch" style="background:var(--c-fo)"></div>
-      <div class="lbl">Ferie obbligatorie</div>
-      <div class="num">${fo}</div>
-      <div class="sub">designate nell'anno</div>
-      ${foChips?`<div class="px-list rich-list">${foChips}</div>`:""}
-    </div>`;
-  const fsmoDays=yearDays().filter(([,v])=>v.type==="FSMO")
-    .map(([k,v])=>({k,st:v.fsmoStatus})).sort((a,b)=>a.k<b.k?-1:1);
-  const fsmoChips=fsmoDays.map(t=>{ const[,m,d]=t.k.split("-").map(Number); const pl=t.st==="planned";
-    return `<span class="px-chip fsmo${pl?" planned":""}" data-key="${t.k}">${d} ${MONTHS_ABBR[m-1]}${pl?" · des.":""}</span>`; }).join("");
-  const fsmoCard=richCard({cid:"cardFSMO",tab:"fsmo",lbl:"Festività SMO",v:"--c-fsmo",inputId:"fsmoTot",tot:fsmoTot,
-    m2v:fsmoTot-(fsmoTaken+fsmoPlanned),m2l:"da pianificare", m3v:fsmoTaken,m3l:"usati", chips:fsmoChips?`<div class="px-list rich-list">${fsmoChips}</div>`:""});
+  document.getElementById("cardFerie").innerHTML=richInner({lbl:"Ferie",v:"--c-fe-taken",fixed:true,tot:ferieTot,
+    m2v:ferieTot-(feTaken+fePlanned),m2l:"da pianificare",m3v:ferieTot-feTaken,m3l:"da prendere",chips:chipRail(dateItems(feDates),"fe",4)});
+
+  const foDates=yearDays().filter(([,v])=>v.fo).map(([k])=>k);
+  document.getElementById("cardFO").innerHTML=countInner({lbl:"Ferie obbligatorie",v:"--c-fo",num:fo,sub:"designate nell'anno",chips:chipRail(dateItems(foDates),"fo",4)});
+
   const cdsDates=yearDays().filter(([,v])=>v.type==="CDS").map(([k])=>k);
-  const cdsCard=`
-    <div class="card wide" id="cardCDS" data-tab="cds">
-      <div class="swatch" style="background:var(--c-cds)"></div>
-      <div class="lbl">Solidarietà</div>
-      <div class="num">${cds}</div>
-      <div class="sub">giornate CDS nell'anno</div>
-      ${chipRail(cdsDates,"cds")}
-    </div>`;
-  // order: Ferie, Ferie obbligatorie, Festività SMO, Solidarietà
-  document.getElementById("summary").innerHTML=ferieCard+foCard+fsmoCard+cdsCard;
+  document.getElementById("cardCDS").innerHTML=countInner({lbl:"Solidarietà",v:"--c-cds",num:cds,sub:"giornate CDS nell'anno",chips:chipRail(dateItems(cdsDates),"cds",4)});
+
+  const fsmoItems=yearDays().filter(([,v])=>v.type==="FSMO").map(([k,v])=>({key:k,label:(+k.slice(8,10))+" "+MONTHS_ABBR[+k.slice(5,7)-1]+(v.fsmoStatus==="planned"?" · des.":"")}));
+  document.getElementById("cardFSMO").innerHTML=richInner({lbl:"Festività SMO",v:"--c-fsmo",inputId:"fsmoTot",tot:fsmoTot,
+    m2v:fsmoTot-(fsmoTaken+fsmoPlanned),m2l:"da pianificare",m3v:fsmoTaken,m3l:"usati",chips:chipRail(fsmoItems,"fsmo",4)});
+
   const si=document.getElementById("fsmoTot");
-  si.addEventListener("change",()=>{ const v=parseFloat(si.value); state.config.fsmoAnnual[year]=isNaN(v)?0:v; queueSave(); renderSummary(); });
-  document.getElementById("summary").querySelectorAll(".px-chip").forEach(c=>c.addEventListener("click",()=>openEditor(c.dataset.key)));
+  if(si) si.addEventListener("change",()=>{ const v=parseFloat(si.value); state.config.fsmoAnnual[year]=isNaN(v)?0:v; queueSave(); renderSummary(); });
   applyTabs();
 }
 
@@ -575,7 +562,7 @@ function renderPanels(){
     empty:"Nessun permesso PX registrato nel "+year+". Clicca un giorno e inserisci l'orario o la durata."
   });
   renderPermitPanel({
-    containerId:"bonusPanel", title:"Bonus Spettanze — ore e minuti",
+    containerId:"bonusPanel", title:"Bonus Spettanze — ore",
     minField:"bonusMinutes", startField:"bonusStart", endField:"bonusEnd",
     annualGet:bonusAnnualFor, annualSet:(y,v)=>{state.config.bonusAnnual[y]=v;}, def:DEFAULT_BONUS_ANNUAL,
     inputId:"bonusAnnualInp", accent:"var(--bonus)",
@@ -593,9 +580,8 @@ function renderPermitPanel(o){
   const remMin=annualMin-usedMin;
   const pct=annualMin>0?Math.min(100,(usedMin/annualMin)*100):0;
   const over=remMin<0;
-  const chips=takes.length
-    ? takes.map(t=>{ const[,m,d]=t.k.split("-").map(Number); const lab=(t.start&&t.end)?`${t.start}–${t.end}`:fmtHM(t.min); return `<span class="px-chip" data-key="${t.k}">${d} ${MONTHS_ABBR[m-1]} · ${lab}</span>`; }).join("")
-    : `<span class="px-empty">${o.empty}</span>`;
+  const items=takes.map(t=>{ const d=+t.k.slice(8,10); const lab=(t.start&&t.end)?`${t.start}–${t.end}`:fmtHM(t.min); return {key:t.k,label:d+" · "+lab}; });
+  const chips = items.length ? chipRail(items,"px",2) : `<div class="px-empty">${o.empty}</div>`;
   const barBg = over ? "" : `;background:${o.accent}`;
   document.getElementById(o.containerId).innerHTML=`
     <div class="swatch" style="background:${o.accent}"></div>
@@ -608,10 +594,9 @@ function renderPermitPanel(o){
       <span class="u">residue · usate ${fmtHM(usedMin)} di ${fmtHM(annualMin)}</span>
     </div>
     <div class="px-bar"><i class="${over?"over":""}" style="width:${pct}%${barBg}"></i></div>
-    <div class="px-list">${chips}</div>`;
+    ${chips}`;
   const inp=document.getElementById(o.inputId);
   inp.addEventListener("change",()=>{ const v=parseFloat(inp.value); o.annualSet(year,isNaN(v)?o.def:v); queueSave(); renderPanels(); });
-  document.getElementById(o.containerId).querySelectorAll(".px-chip").forEach(c=>c.addEventListener("click",()=>openEditor(c.dataset.key)));
 }
 
 function buildCell(y,m,d,hol,todayKey,big){
@@ -838,6 +823,12 @@ function applyTabs(){
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active", b.dataset.tab===activeTab));
 }
 (function bindTabs(){
+  document.addEventListener("click",(e)=>{
+    const chip=e.target.closest(".px-chip");
+    if(chip && chip.dataset.key){ openEditor(chip.dataset.key); return; }
+    const cv=e.target.closest(".cv");
+    if(cv){ const rail=cv.parentElement.querySelector(".chiprail"); if(rail){ rail.scrollBy({left: cv.classList.contains("l")?-rail.clientWidth:rail.clientWidth, behavior:"smooth"}); } }
+  });
   document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
     activeTab=b.dataset.tab; applyTabs(); window.scrollTo({top:0,behavior:"smooth"});
   }));
