@@ -136,10 +136,10 @@
   .permits{display:grid;grid-template-columns:2fr 1fr;gap:12px}
   .px-panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;position:relative;overflow:hidden}
   .px-panel .swatch{position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent)}
-  .px-top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  .px-top .lbl{font-size:12.5px;color:var(--ink-soft);font-weight:600;letter-spacing:.02em;text-transform:uppercase}
-  .px-annual{font-size:12.5px;color:var(--ink-soft)}
-  .px-annual input{width:52px;border:1px solid var(--line-strong);border-radius:7px;padding:3px 6px;font-size:12.5px;font-family:inherit;color:var(--ink);text-align:right}
+  .px-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:nowrap}
+  .px-top .lbl{font-size:12px;color:var(--ink-soft);letter-spacing:.01em;font-weight:400;text-transform:none;flex:1;min-width:0}
+  .px-annual{font-size:11px;color:var(--ink-soft);white-space:nowrap;flex:0 0 auto;text-align:right}
+  .px-annual input{width:44px;border:1px solid var(--line-strong);border-radius:7px;padding:3px 5px;font-size:12px;font-family:inherit;color:var(--ink);text-align:right}
   .px-big{display:flex;align-items:baseline;gap:8px;margin:6px 0 10px}
   .px-big .n{font-family:Georgia,serif;font-size:38px;font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
   .px-big .n.over{color:#b5484a}
@@ -518,14 +518,13 @@ function renderSummary(){
     }
   }
   const ferieTot=ferieAnnualFor(year), fsmoTot=fsmoAnnualFor(year);
+  const metricCell=(m)=> m.input
+    ? `<div><input class="fm-in" id="${m.id}" type="number" min="0" step="1" value="${m.val}"><div class="fm-l">${m.l}</div></div>`
+    : `<div><div class="fm-n">${m.v}</div><div class="fm-l">${m.l}</div></div>`;
   const richInner=(o)=>`
       <div class="swatch" style="background:var(${o.v})"></div>
       <div class="lbl">${o.lbl}</div>
-      <div class="rich-metrics">
-        <div>${o.fixed?`<div class="fm-n">${o.tot}</div>`:`<input class="fm-in" id="${o.inputId}" type="number" min="0" step="1" value="${o.tot}">`}<div class="fm-l">totale</div></div>
-        <div><div class="fm-n">${o.m2v}</div><div class="fm-l">${o.m2l}</div></div>
-        <div><div class="fm-n">${o.m3v}</div><div class="fm-l">${o.m3l}</div></div>
-      </div>
+      <div class="rich-metrics">${o.metrics.map(metricCell).join("")}</div>
       ${o.chips||""}`;
   const countInner=(o)=>`
       <div class="swatch" style="background:var(${o.v})"></div>
@@ -535,8 +534,14 @@ function renderSummary(){
       ${o.chips||""}`;
 
   const feDates=yearDays().filter(([,v])=>v.type==="FE" && v.feStatus!=="planned").map(([k])=>k);
-  document.getElementById("cardFerie").innerHTML=richInner({lbl:"Ferie",v:"--c-fe-taken",fixed:true,tot:ferieTot,
-    m2v:ferieTot-(feTaken+fePlanned),m2l:"da pianificare",m3v:ferieTot-feTaken,m3l:"da prendere",chips:chipRail(dateItems(feDates),"fe",4)});
+  document.getElementById("cardFerie").innerHTML=richInner({lbl:"Ferie",v:"--c-fe-taken",
+    metrics:[
+      {v:ferieTot,l:"totale"},
+      {v:feTaken,l:"usate"},
+      {v:ferieTot-(feTaken+fePlanned),l:"da pianificare"},
+      {v:fePlanned,l:"da confermare"}
+    ],
+    chips:chipRail(dateItems(feDates),"fe",4)});
 
   const foDates=yearDays().filter(([,v])=>v.fo).map(([k])=>k);
   document.getElementById("cardFO").innerHTML=countInner({lbl:"Ferie obbligatorie",v:"--c-fo",num:fo,sub:"designate nell'anno",chips:chipRail(dateItems(foDates),"fo",4)});
@@ -545,8 +550,17 @@ function renderSummary(){
   document.getElementById("cardCDS").innerHTML=countInner({lbl:"Solidarietà",v:"--c-cds",num:cds,sub:"giornate CDS nell'anno",chips:chipRail(dateItems(cdsDates),"cds",4)});
 
   const fsmoItems=yearDays().filter(([,v])=>v.type==="FSMO").map(([k,v])=>({key:k,label:(+k.slice(8,10))+" "+MONTHS_ABBR[+k.slice(5,7)-1]+(v.fsmoStatus==="planned"?" · des.":"")}));
-  document.getElementById("cardFSMO").innerHTML=richInner({lbl:"Festività SMO",v:"--c-fsmo",inputId:"fsmoTot",tot:fsmoTot,
-    m2v:fsmoTot-(fsmoTaken+fsmoPlanned),m2l:"da pianificare",m3v:fsmoTaken,m3l:"usati",chips:chipRail(fsmoItems,"fsmo",4)});
+  document.getElementById("cardFSMO").innerHTML=`
+      <div class="swatch" style="background:var(--c-fsmo)"></div>
+      <div class="px-top">
+        <div class="lbl">Festività SMO</div>
+        <div class="px-annual">totale <input type="number" id="fsmoTot" min="0" step="1" value="${fsmoTot}"></div>
+      </div>
+      <div class="rich-metrics">
+        <div><div class="fm-n">${fsmoTot-(fsmoTaken+fsmoPlanned)}</div><div class="fm-l">da pianificare</div></div>
+        <div><div class="fm-n">${fsmoTaken}</div><div class="fm-l">usati</div></div>
+      </div>
+      ${chipRail(fsmoItems,"fsmo",4)}`;
 
   const si=document.getElementById("fsmoTot");
   if(si) si.addEventListener("change",()=>{ const v=parseFloat(si.value); state.config.fsmoAnnual[year]=isNaN(v)?0:v; queueSave(); renderSummary(); });
