@@ -570,14 +570,14 @@ function renderSummary(){
 
 function renderPanels(){
   renderPermitPanel({
-    containerId:"pxPanel", title:"Permessi PX — ore e minuti",
+    containerId:"pxPanel", title:"Permessi PX — hh:mm",
     minField:"pxMinutes", startField:"pxStart", endField:"pxEnd",
     annualGet:pxAnnualFor, annualSet:(y,v)=>{state.config.pxAnnual[y]=v;}, def:DEFAULT_PX_ANNUAL,
     inputId:"pxAnnualInp", accent:"var(--accent)",
     empty:"Nessun permesso PX registrato nel "+year+". Clicca un giorno e inserisci l'orario o la durata."
   });
   renderPermitPanel({
-    containerId:"bonusPanel", title:"Bonus Spettanze — ore",
+    containerId:"bonusPanel", title:"Bonus Spettanze — hh",
     minField:"bonusMinutes", startField:"bonusStart", endField:"bonusEnd",
     annualGet:bonusAnnualFor, annualSet:(y,v)=>{state.config.bonusAnnual[y]=v;}, def:DEFAULT_BONUS_ANNUAL,
     inputId:"bonusAnnualInp", accent:"var(--bonus)",

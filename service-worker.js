@@ -1,5 +1,5 @@
 // Bump CACHE when you publish a new version of the app to force an update.
-const CACHE = "workcal-v26";
+const CACHE = "workcal-v27";
 const ASSETS = [
   "./",
   "./index.html",
